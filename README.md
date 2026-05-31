@@ -4,6 +4,16 @@
 
 Built with **Gemini 2.5 Flash** + **MongoDB Atlas** + **FastAPI** + **Next.js 15** + **LangGraph**.
 
+### 🌐 Live Demo
+
+| Service | URL |
+|---------|-----|
+| **Frontend (App)** | [https://frontend-beryl-six-58.vercel.app](https://frontend-beryl-six-58.vercel.app) |
+| **Backend API** | [https://backend-one-sigma-73.vercel.app](https://backend-one-sigma-73.vercel.app) |
+| **API Documentation** | [https://backend-one-sigma-73.vercel.app/docs](https://backend-one-sigma-73.vercel.app/docs) |
+
+> **Try it:** Sign up as a Recruiter → Upload a PDF resume → Start an AI interview
+
 ---
 
 ## Features
