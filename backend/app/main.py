@@ -4,7 +4,7 @@ from contextlib import asynccontextmanager
 
 from app.config import get_settings
 from app.db.mongodb import connect_db, close_db
-from app.api.routes import resume, interview, dashboard
+from app.api.routes import resume, interview, dashboard, auth
 
 
 @asynccontextmanager
@@ -32,6 +32,7 @@ app.add_middleware(
 )
 
 # Routes
+app.include_router(auth.router, prefix="/api/auth", tags=["Auth"])
 app.include_router(resume.router, prefix="/api/resume", tags=["Resume"])
 app.include_router(interview.router, prefix="/api/interview", tags=["Interview"])
 app.include_router(dashboard.router, prefix="/api/dashboard", tags=["Dashboard"])

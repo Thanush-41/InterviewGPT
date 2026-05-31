@@ -22,6 +22,9 @@ class Settings(BaseSettings):
     backend_port: int = 8000
     cors_origins: str = "http://localhost:3000"
 
+    # Auth
+    jwt_secret: str = "interviewgpt-secret-change-in-production"
+
     class Config:
         env_file = str(_ENV_FILE)
         env_file_encoding = "utf-8"

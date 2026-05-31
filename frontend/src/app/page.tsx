@@ -1,189 +1,166 @@
 "use client";
 
-import { useState } from "react";
-import { apiRequest } from "@/lib/utils";
+import Link from "next/link";
+import { useAuth } from "@/lib/auth";
+import { useRouter } from "next/navigation";
+import { useEffect } from "react";
 
 export default function HomePage() {
-  const [file, setFile] = useState<File | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [result, setResult] = useState<any>(null);
-  const [error, setError] = useState("");
+  const { user, loading } = useAuth();
+  const router = useRouter();
 
-  const handleUpload = async () => {
-    if (!file) return;
-    setLoading(true);
-    setError("");
-    setResult(null);
-
-    try {
-      const formData = new FormData();
-      formData.append("file", file);
-
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"}/api/resume/upload`,
-        { method: "POST", body: formData }
-      );
-
-      if (!res.ok) {
-        const err = await res.json();
-        throw new Error(err.detail || "Upload failed");
-      }
-
-      const data = await res.json();
-      setResult(data);
-    } catch (err: any) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
+  useEffect(() => {
+    if (!loading && user) {
+      if (user.role === "recruiter") router.replace("/recruiter/dashboard");
+      else router.replace("/candidate/interviews");
     }
-  };
+  }, [user, loading, router]);
+
+  if (loading) return null;
 
   return (
-    <div className="max-w-4xl mx-auto space-y-8">
-      <div className="text-center space-y-2">
-        <h1 className="text-4xl font-bold">InterviewOS</h1>
-        <p className="text-muted-foreground text-lg">
-          AI-Powered Interview Platform with Adaptive Questioning
-        </p>
-      </div>
-
-      {/* Upload Section */}
-      <div className="border rounded-lg p-8 bg-card space-y-4">
-        <h2 className="text-xl font-semibold">Upload Resume</h2>
-        <p className="text-sm text-muted-foreground">
-          Upload a PDF resume to build a knowledge graph and start an AI interview.
-        </p>
-
-        <div className="flex items-center gap-4">
-          <label className="flex-1">
-            <div className="border-2 border-dashed rounded-lg p-8 text-center cursor-pointer hover:border-primary transition">
-              <input
-                type="file"
-                accept=".pdf"
-                className="hidden"
-                onChange={(e) => setFile(e.target.files?.[0] || null)}
-              />
-              {file ? (
-                <p className="text-sm font-medium">{file.name}</p>
-              ) : (
-                <p className="text-sm text-muted-foreground">
-                  Click to select a PDF resume
-                </p>
-              )}
+    <div className="min-h-[calc(100vh-64px)]">
+      {/* Hero Section */}
+      <section className="relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800" />
+        <div className="relative container mx-auto px-4 py-24 md:py-32">
+          <div className="max-w-4xl mx-auto text-center space-y-8">
+            <div className="inline-block px-4 py-1.5 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 text-sm font-medium">
+              AI-Powered Interview Platform
             </div>
-          </label>
-          <button
-            onClick={handleUpload}
-            disabled={!file || loading}
-            className="px-6 py-3 bg-primary text-primary-foreground rounded-lg font-medium disabled:opacity-50 hover:opacity-90 transition"
-          >
-            {loading ? "Processing..." : "Upload & Parse"}
-          </button>
-        </div>
-
-        {error && (
-          <p className="text-sm text-destructive">{error}</p>
-        )}
-      </div>
-
-      {/* Results */}
-      {result && (
-        <div className="space-y-6">
-          {/* Profile Summary */}
-          <div className="border rounded-lg p-6 bg-card">
-            <h3 className="text-lg font-semibold mb-4">
-              {result.profile.name || "Candidate"}
-            </h3>
-            <p className="text-sm text-muted-foreground mb-4">
-              {result.profile.summary}
+            <h1 className="text-5xl md:text-7xl font-bold tracking-tight">
+              <span className="bg-gradient-to-r from-blue-600 via-purple-600 to-blue-800 bg-clip-text text-transparent">
+                InterviewGPT
+              </span>
+            </h1>
+            <p className="text-xl md:text-2xl text-muted-foreground max-w-2xl mx-auto leading-relaxed">
+              Adaptive AI interviews that go beyond surface-level questions.
+              Knowledge graph-powered assessment with real-time evaluation.
             </p>
-
-            {/* Skills */}
-            <div className="mb-4">
-              <h4 className="text-sm font-medium mb-2">Skills</h4>
-              <div className="flex flex-wrap gap-2">
-                {result.profile.skills?.map((skill: any, i: number) => (
-                  <span
-                    key={i}
-                    className="px-2 py-1 text-xs rounded-full bg-primary/10 text-primary font-medium"
-                  >
-                    {skill.name}
-                  </span>
-                ))}
-              </div>
-            </div>
-
-            {/* Projects */}
-            {result.profile.projects?.length > 0 && (
-              <div className="mb-4">
-                <h4 className="text-sm font-medium mb-2">Projects</h4>
-                <div className="space-y-2">
-                  {result.profile.projects.map((project: any, i: number) => (
-                    <div key={i} className="p-3 bg-muted rounded-md">
-                      <p className="font-medium text-sm">{project.name}</p>
-                      <p className="text-xs text-muted-foreground">{project.description}</p>
-                      <div className="flex flex-wrap gap-1 mt-1">
-                        {project.technologies?.map((tech: any, j: number) => (
-                          <span key={j} className="text-xs bg-secondary px-1.5 py-0.5 rounded">
-                            {tech.name}
-                          </span>
-                        ))}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Actions */}
-            <div className="flex gap-3 mt-4">
-              <a
-                href={`/interview/${result.candidate_id}`}
-                className="px-4 py-2 bg-primary text-primary-foreground rounded-md text-sm font-medium hover:opacity-90 transition"
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
+              <Link
+                href="/signup"
+                className="w-full sm:w-auto px-8 py-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl text-lg font-semibold hover:opacity-90 transition shadow-lg shadow-blue-500/25"
               >
-                Start Interview
-              </a>
-              <a
-                href={`/candidates/${result.candidate_id}`}
-                className="px-4 py-2 border rounded-md text-sm font-medium hover:bg-muted transition"
+                Get Started Free
+              </Link>
+              <Link
+                href="/login"
+                className="w-full sm:w-auto px-8 py-4 border-2 border-gray-200 dark:border-gray-700 rounded-xl text-lg font-semibold hover:bg-gray-50 dark:hover:bg-gray-800 transition"
               >
-                View Knowledge Graph
-              </a>
-            </div>
-          </div>
-
-          {/* Knowledge Graph Preview */}
-          <div className="border rounded-lg p-6 bg-card">
-            <h3 className="text-lg font-semibold mb-4">Knowledge Graph</h3>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <div className="text-center p-3 bg-blue-50 rounded-lg">
-                <p className="text-2xl font-bold text-blue-600">
-                  {result.knowledge_graph?.nodes?.filter((n: any) => n.type === "skill").length || 0}
-                </p>
-                <p className="text-xs text-muted-foreground">Skills</p>
-              </div>
-              <div className="text-center p-3 bg-green-50 rounded-lg">
-                <p className="text-2xl font-bold text-green-600">
-                  {result.knowledge_graph?.nodes?.filter((n: any) => n.type === "project").length || 0}
-                </p>
-                <p className="text-xs text-muted-foreground">Projects</p>
-              </div>
-              <div className="text-center p-3 bg-purple-50 rounded-lg">
-                <p className="text-2xl font-bold text-purple-600">
-                  {result.knowledge_graph?.nodes?.filter((n: any) => n.type === "experience").length || 0}
-                </p>
-                <p className="text-xs text-muted-foreground">Experience</p>
-              </div>
-              <div className="text-center p-3 bg-orange-50 rounded-lg">
-                <p className="text-2xl font-bold text-orange-600">
-                  {result.knowledge_graph?.edges?.length || 0}
-                </p>
-                <p className="text-xs text-muted-foreground">Connections</p>
-              </div>
+                Sign In
+              </Link>
             </div>
           </div>
         </div>
-      )}
+      </section>
+
+      {/* Features Section */}
+      <section className="py-24 bg-white dark:bg-gray-900">
+        <div className="container mx-auto px-4">
+          <h2 className="text-3xl md:text-4xl font-bold text-center mb-16">
+            How It Works
+          </h2>
+          <div className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto">
+            {/* Recruiter Card */}
+            <div className="p-8 rounded-2xl border bg-gradient-to-br from-blue-50 to-white dark:from-blue-950/30 dark:to-gray-900 space-y-6">
+              <div className="w-14 h-14 rounded-xl bg-blue-100 dark:bg-blue-900/50 flex items-center justify-center">
+                <svg className="w-7 h-7 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+              </div>
+              <h3 className="text-2xl font-bold">For Recruiters</h3>
+              <ul className="space-y-3 text-muted-foreground">
+                <li className="flex items-start gap-2">
+                  <span className="text-blue-500 mt-1">✓</span>
+                  Upload candidate resumes (PDF)
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-blue-500 mt-1">✓</span>
+                  AI builds knowledge graph from resume
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-blue-500 mt-1">✓</span>
+                  Start adaptive interviews per candidate
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-blue-500 mt-1">✓</span>
+                  Live monitoring dashboard & malpractice detection
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-blue-500 mt-1">✓</span>
+                  Multi-agent evaluation with authenticity scoring
+                </li>
+              </ul>
+              <Link
+                href="/signup?role=recruiter"
+                className="inline-block px-6 py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition"
+              >
+                Join as Recruiter →
+              </Link>
+            </div>
+
+            {/* Candidate Card */}
+            <div className="p-8 rounded-2xl border bg-gradient-to-br from-purple-50 to-white dark:from-purple-950/30 dark:to-gray-900 space-y-6">
+              <div className="w-14 h-14 rounded-xl bg-purple-100 dark:bg-purple-900/50 flex items-center justify-center">
+                <svg className="w-7 h-7 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                </svg>
+              </div>
+              <h3 className="text-2xl font-bold">For Candidates</h3>
+              <ul className="space-y-3 text-muted-foreground">
+                <li className="flex items-start gap-2">
+                  <span className="text-purple-500 mt-1">✓</span>
+                  Take AI-powered technical interviews
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-purple-500 mt-1">✓</span>
+                  Voice or text-based responses
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-purple-500 mt-1">✓</span>
+                  Adaptive difficulty (easy → hard based on answers)
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-purple-500 mt-1">✓</span>
+                  Real-time feedback on each answer
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-purple-500 mt-1">✓</span>
+                  View interview scores & detailed reports
+                </li>
+              </ul>
+              <Link
+                href="/signup?role=candidate"
+                className="inline-block px-6 py-3 bg-purple-600 text-white rounded-lg font-medium hover:bg-purple-700 transition"
+              >
+                Join as Candidate →
+              </Link>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Tech Stack */}
+      <section className="py-20 bg-gray-50 dark:bg-gray-800/50">
+        <div className="container mx-auto px-4 text-center">
+          <h2 className="text-2xl font-bold mb-8">Powered By</h2>
+          <div className="flex flex-wrap items-center justify-center gap-4 text-muted-foreground">
+            <span className="px-4 py-2 rounded-lg bg-white dark:bg-gray-900 border shadow-sm font-medium">Gemini 2.5 Flash</span>
+            <span className="px-4 py-2 rounded-lg bg-white dark:bg-gray-900 border shadow-sm font-medium">LangGraph</span>
+            <span className="px-4 py-2 rounded-lg bg-white dark:bg-gray-900 border shadow-sm font-medium">MongoDB Atlas</span>
+            <span className="px-4 py-2 rounded-lg bg-white dark:bg-gray-900 border shadow-sm font-medium">FastAPI</span>
+            <span className="px-4 py-2 rounded-lg bg-white dark:bg-gray-900 border shadow-sm font-medium">Next.js 15</span>
+          </div>
+        </div>
+      </section>
+
+      {/* Footer */}
+      <footer className="py-8 border-t">
+        <div className="container mx-auto px-4 text-center text-sm text-muted-foreground">
+          Built with AI &bull; InterviewGPT &copy; 2026
+        </div>
+      </footer>
     </div>
   );
 }
